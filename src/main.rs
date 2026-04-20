@@ -678,7 +678,7 @@ const GH_REPO_KEY = 'scot_gh_repo';
 // Register a free GitHub OAuth App (no backend needed — uses Device Flow).
 // Set Homepage URL to your GitHub Pages URL; Callback URL can be blank.
 // Paste the client_id here, then cargo run + push the updated index.html once.
-const GH_CLIENT_ID = '';
+const GH_CLIENT_ID = 'Ov23li6Oy34AHCxIdnF1';
 
 function openSyncModal() {
   const saved = JSON.parse(localStorage.getItem(GH_REPO_KEY) || sessionStorage.getItem('scot_gh_settings') || '{}');
