@@ -404,14 +404,16 @@ fn render_day(day: &Day, active: bool) -> Markup {
 fn render_tabs(days: &[Day]) -> Markup {
     let extra = [("⚠️ Alerts", 5), ("🎒 Gear", 6), ("✨ Tips", 7)];
     html! {
-        div.tabs id="tabBar" {
-            @for (i, day) in days.iter().enumerate() {
-                button class=(if i == 0 { "tab active" } else { "tab" })
-                    onclick=(format!("switchTab({})", i))
-                { (day.tab) }
-            }
-            @for (label, i) in &extra {
-                button class="tab" onclick=(format!("switchTab({})", i)) { (label) }
+        div class="tabs-wrap" {
+            div.tabs id="tabBar" {
+                @for (i, day) in days.iter().enumerate() {
+                    button class=(if i == 0 { "tab active" } else { "tab" })
+                        onclick=(format!("switchTab({})", i))
+                    { (day.tab) }
+                }
+                @for (label, i) in &extra {
+                    button class="tab" onclick=(format!("switchTab({})", i)) { (label) }
+                }
             }
         }
     }
@@ -423,7 +425,8 @@ fn render_tabs(days: &[Day]) -> Markup {
 
 fn css() -> &'static str { r#"
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',system-ui,sans-serif;font-weight:300;background:#f5f0e8;color:#1a1a2e;max-width:680px;margin:0 auto;min-height:100vh}
+button{touch-action:manipulation}
+body{font-family:'DM Sans',system-ui,sans-serif;font-weight:300;background:#f5f0e8;color:#1a1a2e;max-width:680px;margin:0 auto;min-height:100vh;min-height:-webkit-fill-available}
 :root{
   --ink:#1a1a2e;--gold:#c9a84c;--moss:#3d6b4f;--warn:#c0392b;
   --loch:#2c5f7a;--heather:#6b4e71;--paper:#f5f0e8;--mist:#e8e2d5;
@@ -433,7 +436,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;font-weight:300;background:#f5f0
   --dot-w:10px;
 }
 .serif{font-family:'Playfair Display',Georgia,serif}
-.topbar{background:var(--ink);padding:8px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50}
+.topbar{background:var(--ink);padding:8px 16px;display:flex;justify-content:space-between;align-items:center;position:-webkit-sticky;position:sticky;top:0;z-index:50}
 .topbar-left{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(245,240,232,.4)}
 .topbar-right{display:flex;align-items:center;gap:7px}
 .live-dot{width:6px;height:6px;border-radius:50%;background:var(--moss);animation:pulse 2s infinite}
@@ -455,7 +458,8 @@ body{font-family:'DM Sans',system-ui,sans-serif;font-weight:300;background:#f5f0
 .fl-num{font-size:18px;font-weight:700;letter-spacing:1px}
 .fl-detail{font-size:12px;opacity:.75}
 .fl-div{width:1px;background:rgba(255,255,255,.2)}
-.tabs{display:flex;overflow-x:auto;background:var(--mist);border-bottom:2px solid rgba(0,0,0,.08);scrollbar-width:none;position:sticky;top:37px;z-index:10}
+.tabs-wrap{position:-webkit-sticky;position:sticky;top:37px;z-index:10}
+.tabs{display:flex;overflow-x:auto;background:var(--mist);border-bottom:2px solid rgba(0,0,0,.08);scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .tabs::-webkit-scrollbar{display:none}
 .tab{flex-shrink:0;padding:11px 16px;font-size:11px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:rgba(26,26,46,.45);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;white-space:nowrap;font-family:inherit;transition:color .15s}
 .tab.active{color:var(--ink);border-bottom-color:var(--gold)}
@@ -524,6 +528,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;font-weight:300;background:#f5f0
 .stop-note{font-size:13px;color:rgba(26,26,46,.62);line-height:1.5;display:block;width:100%}
 .del-btn{display:none;position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;background:#fae0e0;border:none;color:var(--warn);font-size:14px;cursor:pointer;align-items:center;justify-content:center;z-index:2;font-family:inherit}
 .stop:hover .del-btn{display:flex}
+@media(hover:none){.del-btn{display:flex;opacity:.2}.stop:active .del-btn,.stop .del-btn:focus{opacity:1}}
 .add-stop{display:flex;gap:var(--stop-gap);padding-bottom:40px;margin-top:4px}
 .add-stop-btn{flex:1;padding:8px 16px;font-size:12px;font-weight:500;color:var(--heather);background:white;border:1.5px dashed rgba(107,78,113,.3);border-radius:20px;cursor:pointer;font-family:inherit;text-align:left;transition:all .15s}
 .add-stop-btn:hover{border-color:var(--heather);background:#f8f4fb}
@@ -550,8 +555,16 @@ body{font-family:'DM Sans',system-ui,sans-serif;font-weight:300;background:#f5f0
 .gh-note{font-size:11px;color:#999;margin-top:14px;line-height:1.5;padding:8px;background:#fafafa;border-radius:6px}
 .gh-actions{display:flex;gap:10px;margin-top:18px}
 .gh-cancel{flex:1;padding:8px;border:1px solid #ddd;border-radius:7px;background:none;cursor:pointer;font-family:inherit;font-size:13px;color:#666}
-.gh-push{flex:2;padding:8px;border:none;border-radius:7px;background:#1a1a2e;color:#c9a84c;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500}
+.gh-pull{flex:1;padding:8px;border:1px solid var(--loch);border-radius:7px;background:none;cursor:pointer;font-family:inherit;font-size:13px;color:var(--loch)}
+.gh-push{flex:1;padding:8px;border:none;border-radius:7px;background:#1a1a2e;color:#c9a84c;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500}
 .gh-push:hover{background:#2c3060}.gh-push:disabled{opacity:.5;cursor:not-allowed}
+.gh-oauth{width:100%;padding:10px;margin:16px 0 6px;border:1.5px solid var(--gold);border-radius:8px;background:rgba(201,168,76,.06);color:var(--ink);cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:8px;touch-action:manipulation}
+.gh-oauth:hover{background:rgba(201,168,76,.14)}.gh-oauth:disabled{opacity:.5;cursor:not-allowed}
+.gh-code{display:none;margin:8px 0 12px;padding:12px;background:#f5f0e8;border-radius:8px;font-size:13px;line-height:1.7;text-align:center}
+.gh-code strong{font-size:22px;letter-spacing:4px;display:block;margin:4px 0;font-family:monospace;color:var(--ink)}
+.gh-or{text-align:center;font-size:11px;color:#bbb;margin:10px 0 4px;position:relative}
+.gh-or::before,.gh-or::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:#e0dcd5}
+.gh-or::before{left:0}.gh-or::after{right:0}
 .gh-status{font-size:12px;margin-top:10px;min-height:18px;text-align:center;line-height:1.4}
 .emoji-section-title{font-family:'Playfair Display',Georgia,serif;font-size:18px;padding:20px 22px 8px}
 .tip-row{display:flex;align-items:flex-start;gap:12px;padding:10px 22px;border-bottom:1px solid var(--mist);font-size:13px;line-height:1.5}
@@ -603,10 +616,9 @@ function upDay(dayId, field, val)          { save(); }
 
 function save() {
   try {
-    // Snapshot the entire panels innerHTML so edits survive tab switches
     const snap = {};
     document.querySelectorAll('.panel').forEach(p => { snap[p.id] = p.innerHTML; });
-    localStorage.setItem(SK, JSON.stringify({ snap, tab: activeTab }));
+    localStorage.setItem(SK, JSON.stringify({ snap, tab: activeTab, updated: new Date().toISOString() }));
   } catch(e) {}
 }
 
@@ -626,8 +638,12 @@ function load() {
 function switchTab(i, doScroll = true) {
   activeTab = i;
   document.querySelectorAll('.panel').forEach((p, idx) => p.classList.toggle('active', idx === i));
-  document.querySelectorAll('.tab').forEach((b, idx)  => b.classList.toggle('active', idx === i));
-  if (doScroll) window.scrollTo({ top: 0, behavior: 'smooth' });
+  const tabs = document.querySelectorAll('.tab');
+  tabs.forEach((b, idx) => b.classList.toggle('active', idx === i));
+  if (doScroll) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (tabs[i]) tabs[i].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
 }
 
 function addStop(dayId) {
@@ -657,11 +673,18 @@ function delStop(dayId, stopId) {
   save();
 }
 
-// ── GitHub push ──────────────────────────────────────────────
-function openPushModal() {
-  const saved = JSON.parse(sessionStorage.getItem('scot_gh_settings') || '{}');
+// ── Group sync ───────────────────────────────────────────────
+const GH_REPO_KEY = 'scot_gh_repo';
+// Register a free GitHub OAuth App (no backend needed — uses Device Flow).
+// Set Homepage URL to your GitHub Pages URL; Callback URL can be blank.
+// Paste the client_id here, then cargo run + push the updated index.html once.
+const GH_CLIENT_ID = '';
+
+function openSyncModal() {
+  const saved = JSON.parse(localStorage.getItem(GH_REPO_KEY) || sessionStorage.getItem('scot_gh_settings') || '{}');
   if (saved.repo)   document.getElementById('ghRepo').value   = saved.repo;
   if (saved.branch) document.getElementById('ghBranch').value = saved.branch;
+  if (saved.token)  document.getElementById('ghToken').value  = saved.token;
   document.getElementById('ghOverlay').style.display = 'flex';
   document.getElementById('ghStatus').textContent = '';
 }
@@ -672,63 +695,170 @@ function closePushModal() {
 
 document.addEventListener('DOMContentLoaded', () => {
   load();
+  tryAutoSync();
   document.getElementById('ghOverlay').addEventListener('click', e => {
     if (e.target === document.getElementById('ghOverlay')) closePushModal();
   });
 });
 
+// On page open: silently fetch remote state and apply if newer than local
+async function tryAutoSync() {
+  const config = JSON.parse(localStorage.getItem(GH_REPO_KEY) || 'null');
+  if (!config || !config.repo) return;
+  try {
+    const res = await fetch(`https://api.github.com/repos/${config.repo}/contents/itinerary-state.json?ref=${config.branch || 'main'}&t=${Date.now()}`);
+    if (!res.ok) return;
+    const { content } = await res.json();
+    const bytes = Uint8Array.from(atob(content.replace(/\n/g, '')), c => c.charCodeAt(0));
+    const remote = JSON.parse(new TextDecoder().decode(bytes));
+    const local  = JSON.parse(localStorage.getItem(SK) || '{}');
+    if (new Date(remote.updated || 0) > new Date(local.updated || 0)) {
+      Object.entries(remote.snap || {}).forEach(([id, html]) => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = html;
+      });
+      switchTab(remote.tab || 0, false);
+      save();
+      const t = document.getElementById('syncTxt');
+      if (t) { t.textContent = 'Group state synced ✓'; setTimeout(() => t.textContent = 'Offline · edits saved locally', 3000); }
+    }
+  } catch(e) { /* offline or no state file yet — silent */ }
+}
+
+async function doPull() {
+  const repo   = document.getElementById('ghRepo').value.trim();
+  const branch = document.getElementById('ghBranch').value.trim() || 'main';
+  const token  = document.getElementById('ghToken').value.trim();
+  const status = document.getElementById('ghStatus');
+  const btn    = document.getElementById('ghPullBtn');
+  if (!repo) { status.style.color = '#c0392b'; status.textContent = 'Enter a repo name first.'; return; }
+  localStorage.setItem(GH_REPO_KEY, JSON.stringify({ repo, branch }));
+  btn.disabled = true;
+  status.style.color = '#666';
+  status.textContent = 'Fetching group state…';
+  const headers = token ? { Authorization: `token ${token}` } : {};
+  try {
+    const res = await fetch(`https://api.github.com/repos/${repo}/contents/itinerary-state.json?ref=${branch}`, { headers });
+    if (res.status === 404) { status.textContent = 'No shared state yet — someone needs to push first.'; btn.disabled = false; return; }
+    if (!res.ok) throw new Error(`GitHub ${res.status}`);
+    const { content } = await res.json();
+    const bytes = Uint8Array.from(atob(content.replace(/\n/g, '')), c => c.charCodeAt(0));
+    const { snap, tab: savedTab } = JSON.parse(new TextDecoder().decode(bytes));
+    Object.entries(snap).forEach(([id, html]) => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    });
+    switchTab(savedTab || 0, false);
+    save();
+    status.style.color = '#3d6b4f';
+    status.textContent = '✅ Loaded! You have the latest group version.';
+  } catch(e) {
+    status.style.color = '#c0392b';
+    status.textContent = '❌ ' + e.message;
+  }
+  btn.disabled = false;
+}
+
+async function startDeviceFlow() {
+  const btn    = document.getElementById('ghOAuthBtn');
+  const box    = document.getElementById('ghCodeDisplay');
+  const status = document.getElementById('ghStatus');
+  if (!GH_CLIENT_ID) {
+    status.style.color = '#c0392b';
+    status.textContent = 'OAuth not configured — enter a PAT below, or ask the organiser to set GH_CLIENT_ID.';
+    return;
+  }
+  btn.disabled = true;
+  box.style.display = 'none';
+  status.style.color = '#666';
+  status.textContent = 'Requesting device code…';
+  try {
+    const r1 = await fetch('https://github.com/login/device/code', {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_id: GH_CLIENT_ID, scope: 'public_repo' })
+    });
+    if (!r1.ok) throw new Error(`Device code request failed (${r1.status})`);
+    const { device_code, user_code, verification_uri, expires_in, interval } = await r1.json();
+    box.style.display = 'block';
+    box.innerHTML = `Open <a href="${verification_uri}" target="_blank"><strong>${verification_uri}</strong></a> and enter:<strong>${user_code}</strong><small style="color:#888">Waiting for you to authorise on GitHub…</small>`;
+    status.textContent = '';
+    const token = await pollForToken(device_code, interval || 5, expires_in || 900);
+    const repo   = document.getElementById('ghRepo').value.trim();
+    const branch = document.getElementById('ghBranch').value.trim() || 'main';
+    sessionStorage.setItem('scot_gh_settings', JSON.stringify({ repo, branch, token }));
+    document.getElementById('ghToken').value = token;
+    box.style.display = 'none';
+    status.style.color = '#3d6b4f';
+    status.textContent = '✅ Authorised! You can now pull and push.';
+  } catch(e) {
+    box.style.display = 'none';
+    status.style.color = '#c0392b';
+    status.textContent = '❌ ' + e.message;
+  }
+  btn.disabled = false;
+}
+
+async function pollForToken(deviceCode, intervalSec, expiresIn) {
+  const deadline = Date.now() + expiresIn * 1000;
+  let wait = intervalSec;
+  while (Date.now() < deadline) {
+    await new Promise(r => setTimeout(r, wait * 1000));
+    const res = await fetch('https://github.com/login/oauth/access_token', {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_id: GH_CLIENT_ID, device_code: deviceCode, grant_type: 'urn:ietf:params:oauth:grant-type:device_authorization' })
+    });
+    const data = await res.json();
+    if (data.access_token) return data.access_token;
+    if (data.error === 'access_denied')  throw new Error('Authorisation denied.');
+    if (data.error === 'expired_token')  throw new Error('Code expired — try again.');
+    if (data.error === 'slow_down')      wait = (data.interval || wait) + 2;
+    // 'authorization_pending' → keep polling
+  }
+  throw new Error('Authorisation timed out.');
+}
+
 async function doPush() {
   const repo   = document.getElementById('ghRepo').value.trim();
-  const branch = document.getElementById('ghBranch').value.trim() || 'trip-edits';
+  const branch = document.getElementById('ghBranch').value.trim() || 'main';
   const token  = document.getElementById('ghToken').value.trim();
   const status = document.getElementById('ghStatus');
   const btn    = document.getElementById('ghPushBtn');
-
-  if (!repo || !token) {
-    status.style.color = '#c0392b';
-    status.textContent = 'Please fill in all fields.';
-    return;
-  }
-
-  sessionStorage.setItem('scot_gh_settings', JSON.stringify({ repo, branch }));
+  if (!repo || !token) { status.style.color = '#c0392b'; status.textContent = 'Repo and token required to push.'; return; }
+  localStorage.setItem(GH_REPO_KEY, JSON.stringify({ repo, branch }));
+  sessionStorage.setItem('scot_gh_settings', JSON.stringify({ repo, branch, token }));
   btn.disabled = true;
   status.style.color = '#666';
-
-  const apiBase = `https://api.github.com/repos/${repo}/contents/index.html`;
+  const apiBase = `https://api.github.com/repos/${repo}/contents/itinerary-state.json`;
   const headers = { Authorization: `token ${token}`, 'Content-Type': 'application/json' };
-
   try {
-    status.textContent = 'Fetching current file SHA…';
+    status.textContent = 'Checking current state…';
     const getRes = await fetch(`${apiBase}?ref=${branch}`, { headers });
     let sha;
-    if (getRes.ok) {
-      sha = (await getRes.json()).sha;
-    } else if (getRes.status === 404) {
-      sha = undefined;
-    } else if (getRes.status === 401) {
-      throw new Error('Token invalid or expired. Ensure it has Contents (write) scope.');
-    } else {
-      throw new Error(`GitHub returned ${getRes.status}. Check repo name and token.`);
-    }
-
-    status.textContent = 'Encoding page…';
-    const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-    const bytes = new TextEncoder().encode(html);
+    if (getRes.ok) sha = (await getRes.json()).sha;
+    else if (getRes.status === 404) sha = undefined;
+    else if (getRes.status === 401) throw new Error('Token invalid or expired. Ensure it has Contents (write) scope.');
+    else throw new Error(`GitHub ${getRes.status}. Check repo name and token.`);
+    status.textContent = 'Pushing…';
+    const snap = {};
+    document.querySelectorAll('.panel').forEach(p => { snap[p.id] = p.innerHTML; });
+    const stateJson = JSON.stringify({ snap, tab: activeTab, updated: new Date().toISOString() });
+    const bytes = new TextEncoder().encode(stateJson);
     let binary = '';
     bytes.forEach(b => binary += String.fromCharCode(b));
     const content = btoa(binary);
-
-    status.textContent = `Pushing to ${branch}…`;
-    const body = { message: `Update itinerary via web editor`, content, branch };
+    const body = { message: 'Update shared itinerary state', content, branch };
     if (sha) body.sha = sha;
-
     const putRes = await fetch(apiBase, { method: 'PUT', headers, body: JSON.stringify(body) });
-
     if (putRes.ok) {
       status.style.color = '#3d6b4f';
-      status.textContent = `✅ Pushed to ${branch}! Organiser can squash-merge after the trip.`;
+      status.textContent = '✅ Pushed! Others will auto-sync next time they open the page.';
     } else {
-      const err = await putRes.json();
+      const err = await putRes.json().catch(() => ({}));
+      if (putRes.status === 409 || putRes.status === 422) {
+        throw new Error('Someone pushed while you were editing — ⬇ Pull their changes first, then ⬆ Push yours.');
+      }
       throw new Error(err.message || `Push failed (${putRes.status})`);
     }
   } catch(e) {
@@ -763,29 +893,33 @@ fn render_document(days: &[Day]) -> Markup {
                     div.topbar-right {
                         span.live-dot id="lDot" {}
                         span.sync-txt id="syncTxt" { "Offline · edits saved locally" }
-                        button.push-btn id="pushBtn" onclick="openPushModal()" { "⬆ Push to GitHub" }
+                        button.push-btn id="pushBtn" onclick="openSyncModal()" { "⇅ Sync with group" }
                     }
                 }
 
                 // ── GitHub push modal ──
                 div id="ghOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:center;justify-content:center;" {
                     div id="ghModal" {
-                        div.gh-title { "Push changes to GitHub" }
-                        div.gh-sub { "Commits your edits to the " code{"trip-edits"} " branch. Your organiser squash-merges after the trip." }
+                        div.gh-title { "Group sync" }
+                        div.gh-sub { "Pull the latest shared edits, or push yours for the group to see." }
                         label.gh-label { "Repository " span style="color:#aaa;font-weight:300"{"(owner/repo)"} }
                         input id="ghRepo" class="gh-input" placeholder="e.g. yourname/scotland-trip-2025" autocomplete="off" {}
                         label.gh-label { "Branch" }
-                        input id="ghBranch" class="gh-input" value="trip-edits" autocomplete="off" {}
+                        input id="ghBranch" class="gh-input" value="main" autocomplete="off" {}
+                        button.gh-oauth id="ghOAuthBtn" onclick="startDeviceFlow()" { "🔑 Connect with GitHub (no PAT needed)" }
+                        div.gh-code id="ghCodeDisplay" {}
+                        div.gh-or { "or use a personal access token" }
                         label.gh-label {
                             "Personal Access Token "
                             a href="https://github.com/settings/tokens/new?scopes=contents&description=Scotland+trip"
                               target="_blank" class="gh-link" { "generate one ↗" }
                         }
                         input id="ghToken" class="gh-input" type="password" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off" {}
-                        div.gh-note { "⚠ Token is stored in this browser session only — never saved to disk or sent anywhere except GitHub's API." }
+                        div.gh-note { "⚠ Token only needed to push. Pull works without one on a public repo. Token is session-only, never saved to disk." }
                         div.gh-actions {
                             button.gh-cancel onclick="closePushModal()" { "Cancel" }
-                            button.gh-push id="ghPushBtn" onclick="doPush()" { "Push changes ⬆" }
+                            button.gh-pull id="ghPullBtn" onclick="doPull()" { "⬇ Pull" }
+                            button.gh-push id="ghPushBtn" onclick="doPush()" { "⬆ Push" }
                         }
                         div id="ghStatus" class="gh-status" {}
                     }
