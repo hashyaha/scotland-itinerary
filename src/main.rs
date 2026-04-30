@@ -420,7 +420,7 @@ fn render_tabs(days: &[Day]) -> Markup {
 }
 
 // ─────────────────────────────────────────────
-// CSS — fixed time column + proper line alignment
+// CSS
 // ─────────────────────────────────────────────
 
 fn css() -> &'static str { r#"
@@ -430,20 +430,46 @@ body{font-family:'DM Sans',system-ui,sans-serif;font-weight:300;background:#f5f0
 :root{
   --ink:#1a1a2e;--gold:#c9a84c;--moss:#3d6b4f;--warn:#c0392b;
   --loch:#2c5f7a;--heather:#6b4e71;--paper:#f5f0e8;--mist:#e8e2d5;
-  --time-w:48px;  /* ← fixed: was 28px, too narrow for HH:MM */
+  --time-w:48px;
   --tl-pad:22px;
   --stop-gap:14px;
   --dot-w:10px;
 }
 .serif{font-family:'Playfair Display',Georgia,serif}
+
+/* ── Top bar ── */
 .topbar{background:var(--ink);padding:8px 16px;display:flex;justify-content:space-between;align-items:center;position:-webkit-sticky;position:sticky;top:0;z-index:50}
 .topbar-left{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(245,240,232,.4)}
 .topbar-right{display:flex;align-items:center;gap:7px}
-.live-dot{width:6px;height:6px;border-radius:50%;background:var(--moss);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-.sync-txt{font-size:11px;color:rgba(245,240,232,.6);letter-spacing:.3px}
-.share-banner{background:#1e3a5f;color:white;padding:10px 16px;display:flex;align-items:flex-start;gap:10px;font-size:12px;line-height:1.5}
-.share-dismiss{margin-left:auto;background:rgba(255,255,255,.15);border:none;color:white;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;font-family:inherit}
+
+/* ── View/Edit toggle ── */
+.mode-btn{font-size:11px;font-weight:500;padding:4px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.3);color:rgba(245,240,232,.75);background:transparent;cursor:pointer;font-family:inherit;letter-spacing:.3px;transition:all .2s;white-space:nowrap}
+.mode-btn:hover{border-color:var(--gold);color:var(--gold)}
+.mode-badge{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(245,240,232,.35);padding:3px 8px;border-radius:10px;border:1px solid rgba(255,255,255,.1)}
+.dl-btn{font-size:11px;font-weight:500;padding:4px 12px;border-radius:12px;border:1px solid var(--gold);color:var(--gold);background:transparent;cursor:pointer;font-family:inherit;letter-spacing:.3px;transition:all .2s;white-space:nowrap}
+.dl-btn:hover{background:var(--gold);color:var(--ink)}
+.dl-btn:active{transform:scale(.96)}
+/* view mode: badge shows "viewing", button offers to edit */
+body.view-mode .mode-badge{color:var(--gold);border-color:rgba(201,168,76,.4)}
+
+/* ── View mode: lock all editing ── */
+body.view-mode [contenteditable]{
+  pointer-events:none!important;
+  cursor:default!important;
+  border-bottom-color:transparent!important;
+  background:transparent!important;
+  /* Reset webkit's own editable flag — without this, -webkit-user-modify:read-write-plaintext-only
+     (set by the base [contenteditable] rule) keeps the field typeable even with pointer-events:none */
+  -webkit-user-modify:read-only!important;
+  user-modify:read-only!important;
+}
+body.view-mode .del-btn,
+body.view-mode .add-stop,
+body.view-mode .add-stop-btn{display:none!important}
+body.view-mode .stop:hover .stop-dot{box-shadow:none}
+body.view-mode .stop:hover .stop-card{box-shadow:0 1px 4px rgba(0,0,0,.07)}
+
+/* ── Hero ── */
 .hero{background:var(--ink);padding:26px 22px 22px;position:relative;overflow:hidden}
 .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 80% 20%,rgba(107,78,113,.4) 0%,transparent 60%),radial-gradient(ellipse at 20% 80%,rgba(44,95,122,.35) 0%,transparent 60%);pointer-events:none}
 .hero-inner{position:relative;z-index:1}
@@ -471,38 +497,18 @@ body{font-family:'DM Sans',system-ui,sans-serif;font-weight:300;background:#f5f0
 .alert-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--warn);font-weight:600;margin-bottom:2px}
 .alert-body{font-size:13px;color:var(--ink)}
 
-/* ── TIMELINE: aligned with fixed time column ── */
-.timeline{
-  padding:16px var(--tl-pad) 0;
-  position:relative;
-}
+/* ── TIMELINE ── */
+.timeline{padding:16px var(--tl-pad) 0;position:relative}
 .timeline::before{
-  content:'';
-  position:absolute;
-  /* center on the dot:  tl-pad  + time-w  + gap      + ½dot  */
-  left: calc(var(--tl-pad) + var(--time-w) + var(--stop-gap) + calc(var(--dot-w) / 2));
-  top:16px;
-  bottom:0;
-  width:1px;
+  content:'';position:absolute;
+  left:calc(var(--tl-pad) + var(--time-w) + var(--stop-gap) + calc(var(--dot-w) / 2));
+  top:16px;bottom:0;width:1px;
   background:linear-gradient(to bottom,var(--gold),transparent);
 }
 
 /* ── STOP ROW ── */
 .stop{display:flex;gap:var(--stop-gap);align-items:flex-start;margin-bottom:18px}
-
-/* fixed-width, tabular digits so HH:MM never overflows */
-.stop-time{
-  font-size:11px;
-  font-weight:500;
-  color:var(--heather);
-  width:var(--time-w);   /* ← 48px, was 28px */
-  flex-shrink:0;
-  padding-top:5px;
-  text-align:right;
-  letter-spacing:.3px;
-  font-variant-numeric:tabular-nums;
-  white-space:nowrap;
-}
+.stop-time{font-size:11px;font-weight:500;color:var(--heather);width:var(--time-w);flex-shrink:0;padding-top:5px;text-align:right;letter-spacing:.3px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .stop-dot{width:var(--dot-w);height:var(--dot-w);border-radius:50%;background:var(--gold);flex-shrink:0;margin-top:6px;position:relative;z-index:1;transition:box-shadow .15s}
 .stop:hover .stop-dot{box-shadow:0 0 0 3px rgba(201,168,76,.2)}
 .stop-dot.warn{background:var(--warn)}
@@ -511,7 +517,6 @@ body{font-family:'DM Sans',system-ui,sans-serif;font-weight:300;background:#f5f0
 .stop:hover .stop-card{box-shadow:0 3px 14px rgba(201,168,76,.15)}
 .stop-card.opt{border-left:3px solid var(--moss)}
 .tag{display:inline-block;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:2px 8px;border-radius:10px;font-weight:500;margin-bottom:5px;cursor:text}
-/* iOS fix 1 & 2: webkit prefix + block display required for iPhone keyboard */
 [contenteditable]{
   border-bottom:1.5px dashed transparent;border-radius:2px;
   transition:border-color .15s;cursor:text;outline:none;word-break:break-word;
@@ -543,29 +548,6 @@ body{font-family:'DM Sans',system-ui,sans-serif;font-weight:300;background:#f5f0
 .t-opt{background:#e4f2e8;color:var(--moss)}
 .panel{display:none}
 .panel.active{display:block}
-.push-btn{font-size:11px;font-weight:500;padding:4px 12px;border-radius:12px;border:1px solid var(--gold);color:var(--gold);background:transparent;cursor:pointer;font-family:inherit;letter-spacing:.3px;transition:all .15s;white-space:nowrap}
-.push-btn:hover{background:var(--gold);color:var(--ink)}
-#ghModal{background:white;border-radius:14px;padding:24px;width:340px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-.gh-title{font-family:'Playfair Display',Georgia,serif;font-size:18px;color:#1a1a2e;margin-bottom:6px}
-.gh-sub{font-size:12px;color:#666;line-height:1.5;margin-bottom:18px}
-.gh-label{display:block;font-size:11px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:#6b4e71;margin-bottom:4px;margin-top:12px}
-.gh-link{font-size:11px;color:#2c5f7a;text-decoration:none;float:right;font-weight:400;text-transform:none;letter-spacing:0}
-.gh-input{display:block;width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
-.gh-input:focus{border-color:#c9a84c}
-.gh-note{font-size:11px;color:#999;margin-top:14px;line-height:1.5;padding:8px;background:#fafafa;border-radius:6px}
-.gh-actions{display:flex;gap:10px;margin-top:18px}
-.gh-cancel{flex:1;padding:8px;border:1px solid #ddd;border-radius:7px;background:none;cursor:pointer;font-family:inherit;font-size:13px;color:#666}
-.gh-pull{flex:1;padding:8px;border:1px solid var(--loch);border-radius:7px;background:none;cursor:pointer;font-family:inherit;font-size:13px;color:var(--loch)}
-.gh-push{flex:1;padding:8px;border:none;border-radius:7px;background:#1a1a2e;color:#c9a84c;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500}
-.gh-push:hover{background:#2c3060}.gh-push:disabled{opacity:.5;cursor:not-allowed}
-.gh-oauth{width:100%;padding:10px;margin:16px 0 6px;border:1.5px solid var(--gold);border-radius:8px;background:rgba(201,168,76,.06);color:var(--ink);cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:8px;touch-action:manipulation}
-.gh-oauth:hover{background:rgba(201,168,76,.14)}.gh-oauth:disabled{opacity:.5;cursor:not-allowed}
-.gh-code{display:none;margin:8px 0 12px;padding:12px;background:#f5f0e8;border-radius:8px;font-size:13px;line-height:1.7;text-align:center}
-.gh-code strong{font-size:22px;letter-spacing:4px;display:block;margin:4px 0;font-family:monospace;color:var(--ink)}
-.gh-or{text-align:center;font-size:11px;color:#bbb;margin:10px 0 4px;position:relative}
-.gh-or::before,.gh-or::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:#e0dcd5}
-.gh-or::before{left:0}.gh-or::after{right:0}
-.gh-status{font-size:12px;margin-top:10px;min-height:18px;text-align:center;line-height:1.4}
 .emoji-section-title{font-family:'Playfair Display',Georgia,serif;font-size:18px;padding:20px 22px 8px}
 .tip-row{display:flex;align-items:flex-start;gap:12px;padding:10px 22px;border-bottom:1px solid var(--mist);font-size:13px;line-height:1.5}
 .tip-icon{font-size:16px;flex-shrink:0;width:28px;text-align:center;padding-top:1px}
@@ -583,27 +565,28 @@ body{font-family:'DM Sans',system-ui,sans-serif;font-weight:300;background:#f5f0
 "# }
 
 // ─────────────────────────────────────────────
-// JAVASCRIPT (interaction layer)
+// JAVASCRIPT
 // ─────────────────────────────────────────────
 
 fn js() -> &'static str { r#"
 const SK = 'scot_offline_v2';
-let activeTab = 0;
+let activeTab  = 0;
+let viewMode   = false;   // start in edit mode
 
-// Persist edits to localStorage
-// ── iOS fix 3: blur fires unreliably on iPhone — also save on input ──
+// ── Persist edits to localStorage ──
 document.addEventListener('input', e => {
   if (e.target.isContentEditable) save();
 });
 
-// ── iOS fix 4: tap-to-focus — Safari needs explicit focus() on tap ──
+// ── iOS fix: tap-to-focus ──
 document.addEventListener('touchend', e => {
+  if (viewMode) return;
   const el = e.target.closest('[contenteditable="true"]');
   if (el && document.activeElement !== el) {
     e.preventDefault();
     el.focus();
     const range = document.createRange();
-    const sel = window.getSelection();
+    const sel   = window.getSelection();
     range.selectNodeContents(el);
     range.collapse(false);
     sel.removeAllRanges();
@@ -635,6 +618,27 @@ function load() {
   } catch(e) {}
 }
 
+// ── View / Edit toggle ──
+function toggleMode() {
+  viewMode = !viewMode;
+  document.body.classList.toggle('view-mode', viewMode);
+
+  // Flip every contenteditable attribute so the browser honours it
+  document.querySelectorAll('[contenteditable]').forEach(el => {
+    el.setAttribute('contenteditable', viewMode ? 'false' : 'true');
+  });
+
+  const btn   = document.getElementById('modeBtn');
+  const badge = document.getElementById('modeBadge');
+  if (viewMode) {
+    btn.textContent   = '✏️ Edit';
+    badge.textContent = 'Viewing';
+  } else {
+    btn.textContent   = '👁 View';
+    badge.textContent = 'Editing';
+  }
+}
+
 function switchTab(i, doScroll = true) {
   activeTab = i;
   document.querySelectorAll('.panel').forEach((p, idx) => p.classList.toggle('active', idx === i));
@@ -647,6 +651,7 @@ function switchTab(i, doScroll = true) {
 }
 
 function addStop(dayId) {
+  if (viewMode) return;
   const id = 'new-' + Math.random().toString(36).slice(2, 7);
   const html = `
     <div class="stop" id="${id}">
@@ -668,204 +673,88 @@ function addStop(dayId) {
 }
 
 function delStop(dayId, stopId) {
+  if (viewMode) return;
   if (!confirm('Remove this stop?')) return;
   document.getElementById(stopId)?.remove();
   save();
 }
 
-// ── Group sync ───────────────────────────────────────────────
-const GH_REPO_KEY = 'scot_gh_repo';
-// Register a free GitHub OAuth App (no backend needed — uses Device Flow).
-// Set Homepage URL to your GitHub Pages URL; Callback URL can be blank.
-// Paste the client_id here, then cargo run + push the updated index.html once.
-const GH_CLIENT_ID = '';
-
-function openSyncModal() {
-  const saved = JSON.parse(localStorage.getItem(GH_REPO_KEY) || sessionStorage.getItem('scot_gh_settings') || '{}');
-  if (saved.repo)   document.getElementById('ghRepo').value   = saved.repo;
-  if (saved.branch) document.getElementById('ghBranch').value = saved.branch;
-  if (saved.token)  document.getElementById('ghToken').value  = saved.token;
-  document.getElementById('ghOverlay').style.display = 'flex';
-  document.getElementById('ghStatus').textContent = '';
-}
-
-function closePushModal() {
-  document.getElementById('ghOverlay').style.display = 'none';
-}
-
 document.addEventListener('DOMContentLoaded', () => {
   load();
-  tryAutoSync();
-  document.getElementById('ghOverlay').addEventListener('click', e => {
-    if (e.target === document.getElementById('ghOverlay')) closePushModal();
-  });
+  // Start in view mode — user can tap Edit to unlock
+  toggleMode();
 });
 
-// On page open: silently fetch remote state and apply if newer than local
-async function tryAutoSync() {
-  const config = JSON.parse(localStorage.getItem(GH_REPO_KEY) || 'null');
-  if (!config || !config.repo) return;
-  try {
-    const res = await fetch(`https://api.github.com/repos/${config.repo}/contents/itinerary-state.json?ref=${config.branch || 'main'}&t=${Date.now()}`);
-    if (!res.ok) return;
-    const { content } = await res.json();
-    const bytes = Uint8Array.from(atob(content.replace(/\n/g, '')), c => c.charCodeAt(0));
-    const remote = JSON.parse(new TextDecoder().decode(bytes));
-    const local  = JSON.parse(localStorage.getItem(SK) || '{}');
-    if (new Date(remote.updated || 0) > new Date(local.updated || 0)) {
-      Object.entries(remote.snap || {}).forEach(([id, html]) => {
-        const el = document.getElementById(id);
-        if (el) el.innerHTML = html;
-      });
-      switchTab(remote.tab || 0, false);
-      save();
-      const t = document.getElementById('syncTxt');
-      if (t) { t.textContent = 'Group state synced ✓'; setTimeout(() => t.textContent = 'Offline · edits saved locally', 3000); }
-    }
-  } catch(e) { /* offline or no state file yet — silent */ }
-}
+// ── Download as self-contained static HTML ──
+function downloadStatic() {
+  // 1. Clone panels with current content (including any localStorage edits)
+  const panelsClone = document.getElementById('panels').cloneNode(true);
 
-async function doPull() {
-  const repo   = document.getElementById('ghRepo').value.trim();
-  const branch = document.getElementById('ghBranch').value.trim() || 'main';
-  const token  = document.getElementById('ghToken').value.trim();
-  const status = document.getElementById('ghStatus');
-  const btn    = document.getElementById('ghPullBtn');
-  if (!repo) { status.style.color = '#c0392b'; status.textContent = 'Enter a repo name first.'; return; }
-  localStorage.setItem(GH_REPO_KEY, JSON.stringify({ repo, branch }));
-  btn.disabled = true;
-  status.style.color = '#666';
-  status.textContent = 'Fetching group state…';
-  const headers = token ? { Authorization: `token ${token}` } : {};
-  try {
-    const res = await fetch(`https://api.github.com/repos/${repo}/contents/itinerary-state.json?ref=${branch}`, { headers });
-    if (res.status === 404) { status.textContent = 'No shared state yet — someone needs to push first.'; btn.disabled = false; return; }
-    if (!res.ok) throw new Error(`GitHub ${res.status}`);
-    const { content } = await res.json();
-    const bytes = Uint8Array.from(atob(content.replace(/\n/g, '')), c => c.charCodeAt(0));
-    const { snap, tab: savedTab } = JSON.parse(new TextDecoder().decode(bytes));
-    Object.entries(snap).forEach(([id, html]) => {
-      const el = document.getElementById(id);
-      if (el) el.innerHTML = html;
-    });
-    switchTab(savedTab || 0, false);
-    save();
-    status.style.color = '#3d6b4f';
-    status.textContent = '✅ Loaded! You have the latest group version.';
-  } catch(e) {
-    status.style.color = '#c0392b';
-    status.textContent = '❌ ' + e.message;
-  }
-  btn.disabled = false;
-}
+  // Strip every editing affordance from the clone
+  panelsClone.querySelectorAll('[contenteditable]').forEach(el => {
+    el.removeAttribute('contenteditable');
+    el.removeAttribute('onblur');
+  });
+  panelsClone.querySelectorAll('.del-btn, .add-stop').forEach(el => el.remove());
+  panelsClone.querySelectorAll('[onclick]').forEach(el => el.removeAttribute('onclick'));
 
-async function startDeviceFlow() {
-  const btn    = document.getElementById('ghOAuthBtn');
-  const box    = document.getElementById('ghCodeDisplay');
-  const status = document.getElementById('ghStatus');
-  if (!GH_CLIENT_ID) {
-    status.style.color = '#c0392b';
-    status.textContent = 'OAuth not configured — enter a PAT below, or ask the organiser to set GH_CLIENT_ID.';
-    return;
-  }
-  btn.disabled = true;
-  box.style.display = 'none';
-  status.style.color = '#666';
-  status.textContent = 'Requesting device code…';
-  try {
-    const r1 = await fetch('https://github.com/login/device/code', {
-      method: 'POST',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ client_id: GH_CLIENT_ID, scope: 'public_repo' })
-    });
-    if (!r1.ok) throw new Error(`Device code request failed (${r1.status})`);
-    const { device_code, user_code, verification_uri, expires_in, interval } = await r1.json();
-    box.style.display = 'block';
-    box.innerHTML = `Open <a href="${verification_uri}" target="_blank"><strong>${verification_uri}</strong></a> and enter:<strong>${user_code}</strong><small style="color:#888">Waiting for you to authorise on GitHub…</small>`;
-    status.textContent = '';
-    const token = await pollForToken(device_code, interval || 5, expires_in || 900);
-    const repo   = document.getElementById('ghRepo').value.trim();
-    const branch = document.getElementById('ghBranch').value.trim() || 'main';
-    sessionStorage.setItem('scot_gh_settings', JSON.stringify({ repo, branch, token }));
-    document.getElementById('ghToken').value = token;
-    box.style.display = 'none';
-    status.style.color = '#3d6b4f';
-    status.textContent = '✅ Authorised! You can now pull and push.';
-  } catch(e) {
-    box.style.display = 'none';
-    status.style.color = '#c0392b';
-    status.textContent = '❌ ' + e.message;
-  }
-  btn.disabled = false;
-}
+  // 2. Clone tabs (preserves the current active class)
+  const tabsClone = document.querySelector('.tabs-wrap').cloneNode(true);
 
-async function pollForToken(deviceCode, intervalSec, expiresIn) {
-  const deadline = Date.now() + expiresIn * 1000;
-  let wait = intervalSec;
-  while (Date.now() < deadline) {
-    await new Promise(r => setTimeout(r, wait * 1000));
-    const res = await fetch('https://github.com/login/oauth/access_token', {
-      method: 'POST',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ client_id: GH_CLIENT_ID, device_code: deviceCode, grant_type: 'urn:ietf:params:oauth:grant-type:device_authorization' })
-    });
-    const data = await res.json();
-    if (data.access_token) return data.access_token;
-    if (data.error === 'access_denied')  throw new Error('Authorisation denied.');
-    if (data.error === 'expired_token')  throw new Error('Code expired — try again.');
-    if (data.error === 'slow_down')      wait = (data.interval || wait) + 2;
-    // 'authorization_pending' → keep polling
-  }
-  throw new Error('Authorisation timed out.');
-}
+  // 3. Static topbar — title only, no buttons
+  const staticTopbar = '<div class="topbar"><div class="topbar-left">Scotland \u00B7 May 2025</div></div>';
 
-async function doPush() {
-  const repo   = document.getElementById('ghRepo').value.trim();
-  const branch = document.getElementById('ghBranch').value.trim() || 'main';
-  const token  = document.getElementById('ghToken').value.trim();
-  const status = document.getElementById('ghStatus');
-  const btn    = document.getElementById('ghPushBtn');
-  if (!repo || !token) { status.style.color = '#c0392b'; status.textContent = 'Repo and token required to push.'; return; }
-  localStorage.setItem(GH_REPO_KEY, JSON.stringify({ repo, branch }));
-  sessionStorage.setItem('scot_gh_settings', JSON.stringify({ repo, branch, token }));
-  btn.disabled = true;
-  status.style.color = '#666';
-  const apiBase = `https://api.github.com/repos/${repo}/contents/itinerary-state.json`;
-  const headers = { Authorization: `token ${token}`, 'Content-Type': 'application/json' };
-  try {
-    status.textContent = 'Checking current state…';
-    const getRes = await fetch(`${apiBase}?ref=${branch}`, { headers });
-    let sha;
-    if (getRes.ok) sha = (await getRes.json()).sha;
-    else if (getRes.status === 404) sha = undefined;
-    else if (getRes.status === 401) throw new Error('Token invalid or expired. Ensure it has Contents (write) scope.');
-    else throw new Error(`GitHub ${getRes.status}. Check repo name and token.`);
-    status.textContent = 'Pushing…';
-    const snap = {};
-    document.querySelectorAll('.panel').forEach(p => { snap[p.id] = p.innerHTML; });
-    const stateJson = JSON.stringify({ snap, tab: activeTab, updated: new Date().toISOString() });
-    const bytes = new TextEncoder().encode(stateJson);
-    let binary = '';
-    bytes.forEach(b => binary += String.fromCharCode(b));
-    const content = btoa(binary);
-    const body = { message: 'Update shared itinerary state', content, branch };
-    if (sha) body.sha = sha;
-    const putRes = await fetch(apiBase, { method: 'PUT', headers, body: JSON.stringify(body) });
-    if (putRes.ok) {
-      status.style.color = '#3d6b4f';
-      status.textContent = '✅ Pushed! Others will auto-sync next time they open the page.';
-    } else {
-      const err = await putRes.json().catch(() => ({}));
-      if (putRes.status === 409 || putRes.status === 422) {
-        throw new Error('Someone pushed while you were editing — ⬇ Pull their changes first, then ⬆ Push yours.');
-      }
-      throw new Error(err.message || `Push failed (${putRes.status})`);
-    }
-  } catch(e) {
-    status.style.color = '#c0392b';
-    status.textContent = '❌ ' + e.message;
-  }
-  btn.disabled = false;
+  // 4. Grab hero and flights verbatim
+  const heroHTML    = document.querySelector('.hero').outerHTML;
+  const flightsHTML = document.querySelector('.flights').outerHTML;
+
+  // 5. Tab-switching only — no editing, no localStorage
+  const minJs = [
+    'let activeTab = 0;',
+    'function switchTab(i, doScroll) {',
+    '  activeTab = i;',
+    '  document.querySelectorAll(".panel").forEach((p,idx) => p.classList.toggle("active", idx === i));',
+    '  document.querySelectorAll(".tab").forEach((b,idx) => b.classList.toggle("active", idx === i));',
+    '  if (doScroll !== false) {',
+    '    window.scrollTo({ top: 0, behavior: "smooth" });',
+    '    document.querySelectorAll(".tab")[i]?.scrollIntoView({ block: "nearest", inline: "nearest" });',
+    '  }',
+    '}'
+  ].join('\n');
+
+  // 6. Full CSS from the live page
+  const css = document.querySelector('style').textContent;
+
+  // 7. Assemble
+  const parts = [
+    '<!DOCTYPE html>',
+    '<html lang="en">',
+    '<head>',
+    '  <meta charset="UTF-8">',
+    '  <meta name="viewport" content="width=device-width,initial-scale=1">',
+    '  <title>Scotland Highlands \u2014 Itinerary</title>',
+    '  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap">',
+    '  <style>' + css + '</style>',
+    '</head>',
+    '<body>',
+    staticTopbar,
+    heroHTML,
+    flightsHTML,
+    tabsClone.outerHTML,
+    '<div id="panels">' + panelsClone.innerHTML + '</div>',
+    '<script>' + minJs + '<' + '/script>',
+    '</body>',
+    '</html>'
+  ].join('\n');
+
+  const blob = new Blob([parts], { type: 'text/html' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'scotland-itinerary.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 "# }
 
@@ -891,49 +780,9 @@ fn render_document(days: &[Day]) -> Markup {
                 div.topbar {
                     div.topbar-left { "Scotland · May 2025" }
                     div.topbar-right {
-                        span.live-dot id="lDot" {}
-                        span.sync-txt id="syncTxt" { "Offline · edits saved locally" }
-                        button.push-btn id="pushBtn" onclick="openSyncModal()" { "⇅ Sync with group" }
-                    }
-                }
-
-                // ── GitHub push modal ──
-                div id="ghOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:center;justify-content:center;" {
-                    div id="ghModal" {
-                        div.gh-title { "Group sync" }
-                        div.gh-sub { "Pull the latest shared edits, or push yours for the group to see." }
-                        label.gh-label { "Repository " span style="color:#aaa;font-weight:300"{"(owner/repo)"} }
-                        input id="ghRepo" class="gh-input" placeholder="e.g. yourname/scotland-trip-2025" autocomplete="off" {}
-                        label.gh-label { "Branch" }
-                        input id="ghBranch" class="gh-input" value="main" autocomplete="off" {}
-                        button.gh-oauth id="ghOAuthBtn" onclick="startDeviceFlow()" { "🔑 Connect with GitHub (no PAT needed)" }
-                        div.gh-code id="ghCodeDisplay" {}
-                        div.gh-or { "or use a personal access token" }
-                        label.gh-label {
-                            "Personal Access Token "
-                            a href="https://github.com/settings/tokens/new?scopes=contents&description=Scotland+trip"
-                              target="_blank" class="gh-link" { "generate one ↗" }
-                        }
-                        input id="ghToken" class="gh-input" type="password" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off" {}
-                        div.gh-note { "⚠ Token only needed to push. Pull works without one on a public repo. Token is session-only, never saved to disk." }
-                        div.gh-actions {
-                            button.gh-cancel onclick="closePushModal()" { "Cancel" }
-                            button.gh-pull id="ghPullBtn" onclick="doPull()" { "⬇ Pull" }
-                            button.gh-push id="ghPushBtn" onclick="doPush()" { "⬆ Push" }
-                        }
-                        div id="ghStatus" class="gh-status" {}
-                    }
-                }
-
-                // ── Share banner ──
-                div.share-banner id="shareBanner" {
-                    div style="font-size:16px;flex-shrink:0" { "💬" }
-                    div {
-                        strong { "Group editing: " }
-                        "Share via Google Drive or WhatsApp. Everyone edits their own local copy — changes save automatically to their device."
-                    }
-                    button.share-dismiss onclick="document.getElementById('shareBanner').style.display='none'" {
-                        "Got it"
+                        span.mode-badge id="modeBadge" { "Editing" }
+                        button.mode-btn id="modeBtn" onclick="toggleMode()" { "👁 View" }
+                        button.dl-btn onclick="downloadStatic()" { "⬇ Download" }
                     }
                 }
 
