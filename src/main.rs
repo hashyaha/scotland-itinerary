@@ -446,6 +446,9 @@ body{font-family:'DM Sans',system-ui,sans-serif;font-weight:300;background:#f5f0
 .mode-btn{font-size:11px;font-weight:500;padding:4px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.3);color:rgba(245,240,232,.75);background:transparent;cursor:pointer;font-family:inherit;letter-spacing:.3px;transition:all .2s;white-space:nowrap}
 .mode-btn:hover{border-color:var(--gold);color:var(--gold)}
 .mode-badge{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(245,240,232,.35);padding:3px 8px;border-radius:10px;border:1px solid rgba(255,255,255,.1)}
+.dl-btn{font-size:11px;font-weight:500;padding:4px 12px;border-radius:12px;border:1px solid var(--gold);color:var(--gold);background:transparent;cursor:pointer;font-family:inherit;letter-spacing:.3px;transition:all .2s;white-space:nowrap}
+.dl-btn:hover{background:var(--gold);color:var(--ink)}
+.dl-btn:active{transform:scale(.96)}
 /* view mode: badge shows "viewing", button offers to edit */
 body.view-mode .mode-badge{color:var(--gold);border-color:rgba(201,168,76,.4)}
 
@@ -681,6 +684,78 @@ document.addEventListener('DOMContentLoaded', () => {
   // Start in view mode — user can tap Edit to unlock
   toggleMode();
 });
+
+// ── Download as self-contained static HTML ──
+function downloadStatic() {
+  // 1. Clone panels with current content (including any localStorage edits)
+  const panelsClone = document.getElementById('panels').cloneNode(true);
+
+  // Strip every editing affordance from the clone
+  panelsClone.querySelectorAll('[contenteditable]').forEach(el => {
+    el.removeAttribute('contenteditable');
+    el.removeAttribute('onblur');
+  });
+  panelsClone.querySelectorAll('.del-btn, .add-stop').forEach(el => el.remove());
+  panelsClone.querySelectorAll('[onclick]').forEach(el => el.removeAttribute('onclick'));
+
+  // 2. Clone tabs (preserves the current active class)
+  const tabsClone = document.querySelector('.tabs-wrap').cloneNode(true);
+
+  // 3. Static topbar — title only, no buttons
+  const staticTopbar = '<div class="topbar"><div class="topbar-left">Scotland \u00B7 May 2025</div></div>';
+
+  // 4. Grab hero and flights verbatim
+  const heroHTML    = document.querySelector('.hero').outerHTML;
+  const flightsHTML = document.querySelector('.flights').outerHTML;
+
+  // 5. Tab-switching only — no editing, no localStorage
+  const minJs = [
+    'let activeTab = 0;',
+    'function switchTab(i, doScroll) {',
+    '  activeTab = i;',
+    '  document.querySelectorAll(".panel").forEach((p,idx) => p.classList.toggle("active", idx === i));',
+    '  document.querySelectorAll(".tab").forEach((b,idx) => b.classList.toggle("active", idx === i));',
+    '  if (doScroll !== false) {',
+    '    window.scrollTo({ top: 0, behavior: "smooth" });',
+    '    document.querySelectorAll(".tab")[i]?.scrollIntoView({ block: "nearest", inline: "nearest" });',
+    '  }',
+    '}'
+  ].join('\n');
+
+  // 6. Full CSS from the live page
+  const css = document.querySelector('style').textContent;
+
+  // 7. Assemble
+  const parts = [
+    '<!DOCTYPE html>',
+    '<html lang="en">',
+    '<head>',
+    '  <meta charset="UTF-8">',
+    '  <meta name="viewport" content="width=device-width,initial-scale=1">',
+    '  <title>Scotland Highlands \u2014 Itinerary</title>',
+    '  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap">',
+    '  <style>' + css + '</style>',
+    '</head>',
+    '<body>',
+    staticTopbar,
+    heroHTML,
+    flightsHTML,
+    tabsClone.outerHTML,
+    '<div id="panels">' + panelsClone.innerHTML + '</div>',
+    '<script>' + minJs + '<' + '/script>',
+    '</body>',
+    '</html>'
+  ].join('\n');
+
+  const blob = new Blob([parts], { type: 'text/html' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'scotland-itinerary.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
 "# }
 
 // ─────────────────────────────────────────────
@@ -707,6 +782,7 @@ fn render_document(days: &[Day]) -> Markup {
                     div.topbar-right {
                         span.mode-badge id="modeBadge" { "Editing" }
                         button.mode-btn id="modeBtn" onclick="toggleMode()" { "👁 View" }
+                        button.dl-btn onclick="downloadStatic()" { "⬇ Download" }
                     }
                 }
 
